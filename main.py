@@ -1,20 +1,26 @@
 import numpy as np
 import pygame
+from GUIext import *
 
-RATIO = (1, 1)
+RATIO = (1, 1) # Frozen for button squareness
 HEIGHT = 720
 WIDTH = HEIGHT//RATIO[0]*RATIO[1]
+
 BLUE = (0, 0, 255)
 WHITE = (255, 255, 255)
 
+BUTTON_HEIGHT = HEIGHT//3
+BUTTON_WIDTH = WIDTH//3
+
 PLAYER_1 = 1
 PLAYER_2 = 2
+ITERS = 0
 player = PLAYER_1
 grid = [[None]*3 for i in range(3)]
 winners = {PLAYER_1: [], PLAYER_2: []}
 
 def grid_full():
-    return all(x!=None for line in grid for x in line)
+    return ITERS >= 9
 
 def game_round(r, c):
     global player
@@ -29,7 +35,7 @@ def print_grid():
             print(f"|{player_mapping[grid[i][j]]}", end="")
         print("|")
 
-def finished(r, c, player):
+def win(r, c, player):
     if grid.count(player) == 3:
         return True
     for line in grid:
@@ -41,24 +47,32 @@ def finished(r, c, player):
         return True
     return False
 
-def grid(blck_height = HEIGHT//3, blck_width = WIDTH//3):
-    for x in range(0, WIDTH, blck_height):
-        for y in range(0, HEIGHT, blck_width):
-            # pygame.draw.rect(screen, BLUE, rect, 1)
-            yield pygame.Rect(x, y, blck_width, blck_height)
+def finished(r, c, player):
+    return win(r, c, player) or grid_full()
 
-# cross_img = pygame.image.load("cross.png")
-# circle_img = pygame.image.load("circle.png")
+def grid(blck_height = HEIGHT//3, blck_width = WIDTH//3):
+    for y in range(0, HEIGHT, blck_width):
+        for x in range(0, WIDTH, blck_height):
+            # pygame.draw.rect(screen, BLUE, rect, 1)
+            yield Button(pygame.Rect(x, y, blck_width, blck_height))
+
+
 
 player_mapping = {PLAYER_1: "X", PLAYER_2: "O", None: " "}
 
 pygame.init()
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
 SCREEN.fill(WHITE)
-buttons = grid()
+cross_img = pygame.transform.scale(pygame.image.load("cross.png"), (BUTTON_WIDTH, BUTTON_HEIGHT))
+circle_img = pygame.transform.scale(pygame.image.load("circle.png"), (BUTTON_WIDTH, BUTTON_HEIGHT))
 
+buttons = np.array(list(grid())).reshape((3, 3))
+gen = iter(buttons.flatten())
 # quit_button = pygame.Rect(2, 2, 50, 50)
 # pygame.draw.rect(SCREEN, BLUE, quit_button)
+
+next(gen).add_image(cross_img, SCREEN)
+next(gen).add_image(circle_img, SCREEN)
 
 running = True
 while running:
@@ -83,15 +97,16 @@ while running:
     #print("Finished!")
     try:
         # Draw the next rectangle from the generator
-        b = next(buttons)
+        b = next(gen)
         pygame.draw.rect(SCREEN, BLUE, b, 1)
     except StopIteration:
         # If the generator is exhausted, recreate it
-        buttons = grid()
+        gen = iter(buttons.flatten())
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+    ITERS+=1
     pygame.display.update()
 
 pygame.quit()
