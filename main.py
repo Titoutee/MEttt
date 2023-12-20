@@ -1,6 +1,12 @@
 import numpy as np
 import pygame
 
+RATIO = (1, 1)
+HEIGHT = 720
+WIDTH = HEIGHT//RATIO[0]*RATIO[1]
+BLUE = (0, 0, 255)
+WHITE = (255, 255, 255)
+
 PLAYER_1 = 1
 PLAYER_2 = 2
 player = PLAYER_1
@@ -35,19 +41,24 @@ def finished(r, c, player):
         return True
     return False
 
-    
+def grid(blck_height = HEIGHT//3, blck_width = WIDTH//3):
+    for x in range(0, WIDTH, blck_height):
+        for y in range(0, HEIGHT, blck_width):
+            # pygame.draw.rect(screen, BLUE, rect, 1)
+            yield pygame.Rect(x, y, blck_width, blck_height)
+
+# cross_img = pygame.image.load("cross.png")
+# circle_img = pygame.image.load("circle.png")
+
 player_mapping = {PLAYER_1: "X", PLAYER_2: "O", None: " "}
 
-HEIGHT = 720
-WIDTH = HEIGHT//9*16
-BLUE = (0, 0, 255)
-WHITE = (255, 255, 255)
 pygame.init()
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
 SCREEN.fill(WHITE)
+buttons = grid()
 
-quit_button = pygame.Rect(2, 2, 50, 50)
-pygame.draw.rect(SCREEN, BLUE, quit_button)
+# quit_button = pygame.Rect(2, 2, 50, 50)
+# pygame.draw.rect(SCREEN, BLUE, quit_button)
 
 running = True
 while running:
@@ -70,6 +81,17 @@ while running:
     #else:
     #    print("Full game!")
     #print("Finished!")
+    try:
+        # Draw the next rectangle from the generator
+        b = next(buttons)
+        pygame.draw.rect(SCREEN, BLUE, b, 1)
+    except StopIteration:
+        # If the generator is exhausted, recreate it
+        buttons = grid()
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
     pygame.display.update()
 
 pygame.quit()
