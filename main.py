@@ -15,35 +15,22 @@ BUTTON_WIDTH = WIDTH//3
 PLAYER_1 = 1
 PLAYER_2 = 2
 ITERS = 0
-player = PLAYER_1
-grid = [[None]*3 for i in range(3)]
+
+game_grid = [[None]*3]*3
 winners = {PLAYER_1: [], PLAYER_2: []}
 
 def grid_full():
     return ITERS >= 9
 
-def game_round(r, c):
-    global player
-    grid[r][c] = player
-    player = PLAYER_2 if player == PLAYER_1 else PLAYER_1
-    print_grid()
-
-def print_grid():
-    for i in range(len(grid)):
-        # print("_ _ _")
-        for j in range(len(grid[0])):
-            print(f"|{player_mapping[grid[i][j]]}", end="")
-        print("|")
-
 def win(r, c, player):
-    if grid.count(player) == 3:
+    if game_grid.count(player) == 3:
         return True
-    for line in grid:
+    for line in game_grid:
         if line[0] != player:
             break
     else:
         return True
-    if grid[0][0] == grid[1][1] == grid[2][2]:
+    if game_grid[0][0] == game_grid[1][1] == game_grid[2][2]:
         return True
     return False
 
@@ -57,9 +44,6 @@ def grid(blck_height = HEIGHT//3, blck_width = WIDTH//3):
             yield Button(pygame.Rect(x, y, blck_width, blck_height))
 
 
-
-player_mapping = {PLAYER_1: "X", PLAYER_2: "O", None: " "}
-
 pygame.init()
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
 SCREEN.fill(WHITE)
@@ -71,30 +55,26 @@ gen = iter(buttons.flatten())
 # quit_button = pygame.Rect(2, 2, 50, 50)
 # pygame.draw.rect(SCREEN, BLUE, quit_button)
 
-next(gen).add_image(cross_img, SCREEN)
-next(gen).add_image(circle_img, SCREEN)
-
+player = PLAYER_1
+player_mapping = {PLAYER_1: cross_img, PLAYER_2: circle_img}
 running = True
+
 while running:
-    #while not grid_full():
-    #    event = None
-    #    while event != pygame.MOUSEBUTTONDOWN:
-    #        event = pygame.event.wait()
-    #    mouse_x, mouse_y = pygame.mouse.get_pos()
-    #    if quit_button.collidepoint(mouse_x, mouse_y):
-    #        print("Hey")
+    event = pygame.event.poll()
+    if event.type == MOUSEBUTTONDOWN:
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        print("Clicked!")
+        r, c = clicked_on_who(mouse_x, mouse_y, buttons)
+        if not buttons[r][c].is_clickable():
+            continue
+        game_grid[r][c] = player
+        buttons[r][c].add_image(player_mapping[player], SCREEN)
+        buttons[r][c].clickable = False
+        #if finished(r, c, player):
+        #    print(f"Player {player} wins!")
+        #    break
+        player = PLAYER_2 if player == PLAYER_1 else PLAYER_1
 
-    #    # print(r, c)
-    #    # grid[r][c] = player
-
-    #    # print_grid()
-    #    # if finished(r, c, player):
-    #    #     print(f"Player {player} wins!")
-    #    #     break
-    #    # player = PLAYER_2 if player == PLAYER_1 else PLAYER_1
-    #else:
-    #    print("Full game!")
-    #print("Finished!")
     try:
         # Draw the next rectangle from the generator
         b = next(gen)
