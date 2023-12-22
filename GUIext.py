@@ -11,7 +11,8 @@ class Button:
 
     def is_clickable(self):
         return self.clickable
-    
+
+# Who has been clicked?
 def clicked_on_who(m_x, m_y, buttons):
     assert isinstance(m_x, int) and isinstance(m_y, int)
     for r, row in enumerate(buttons):
