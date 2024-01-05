@@ -37,10 +37,10 @@ def win(r, c, player):
     if game_grid[0][0] != None and game_grid[0][0] == game_grid[1][1] == game_grid[2][2]:
         print("Diag wins!")
         return True
+    if game_grid[0][2] != None and game_grid[0][2] == game_grid[1][1] == game_grid[2][0]:
+        print("Diag wins!")
+        return True
     return False
-
-def finished(r, c, player):
-    return win(r, c, player) or grid_full()
 
 def grid(blck_height = BUTTON_HEIGHT, blck_width = BUTTON_WIDTH):
     for y in range(0, HEIGHT, blck_width):
@@ -74,9 +74,12 @@ while running:
         game_grid[r][c] = player
         buttons[r][c].add_image(player_mapping[player], SCREEN)
         buttons[r][c].clickable = False
-        if finished(r, c, player):
+        if win(r, c, player):
             print(f"Player {player} wins!")
-            running = False
+            break
+        if grid_full():
+            print(f"Game grid is full!")
+            break
         player = PLAYER_2 if player == PLAYER_1 else PLAYER_1
         ITERS+=1
 
