@@ -1,5 +1,6 @@
 import numpy as np
 import pygame
+import argparse
 from GUIext import *
 
 RATIO = (1, 1) # Frozen for button squareness
@@ -14,6 +15,7 @@ BUTTON_WIDTH = WIDTH//3
 
 PLAYER_1 = 1
 PLAYER_2 = 2
+
 ITERS = 0
 
 game_grid = [[None]*3 for _ in range(3)]
@@ -42,11 +44,40 @@ def win(r, c, player):
         return True
     return False
 
+def count_from_towards(r, c, dh, dv, player):
+    n = 1
+    r+=dv
+    c+=dh  
+    while 0<=r<=2 and 0<=c<=2:
+        if game_grid[r][c] == player:
+            n+=1
+        else:
+            break
+        r+=dv
+        c+=dh  
+    return n
+
+def count_from(r, c, player):
+    maximum = count_from_towards(r, c, 1, 0, player) + count_from_towards(r, c, -1, 0, player)-1
+    maximum = max(maximum, count_from_towards(r, c, 0, 1, player) + count_from_towards(r, c, 0, -1, player)-1)
+    maximum = max(maximum, count_from_towards(r, c, 1, 1, player) + count_from_towards(r, c, -1, -1, player)-1)
+
+    return maximum
+
+def best_fit():
+    nones = [(r, c) for r, row in enumerate(game_grid) for c, val in enumerate(row) if val == None]
+    return sorted(nones, key=lambda pos: count_from(pos[0], pos[1], PLAYER_1))[-1], sorted(nones, key=lambda pos: count_from(pos[0], pos[1], PLAYER_2))[-1]
+    
+            
 def grid(blck_height = BUTTON_HEIGHT, blck_width = BUTTON_WIDTH):
     for y in range(0, HEIGHT, blck_width):
         for x in range(0, WIDTH, blck_height):
             # pygame.draw.rect(screen, BLUE, rect, 1)
             yield Button(pygame.Rect(x, y, blck_width, blck_height))
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--robot', action="store_true")
+one_player = parser.parse_args().robot # Get "robot" argument
 
 pygame.init()
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
@@ -60,11 +91,9 @@ gen = iter(buttons.flatten())
 
 player = PLAYER_1
 player_mapping = {PLAYER_1: cross_img, PLAYER_2: circle_img}
-running = True
 
-while running:
-    print(game_grid)
-    event = pygame.event.poll()
+while True:
+    event = pygame.event.wait()
     if event.type == MOUSEBUTTONDOWN:
         mouse_x, mouse_y = pygame.mouse.get_pos()
         print("Clicked!")
@@ -81,6 +110,7 @@ while running:
             print(f"Game grid is full!")
             break
         player = PLAYER_2 if player == PLAYER_1 else PLAYER_1
+        print(best_fit())
         ITERS+=1
 
     try:
@@ -95,4 +125,3 @@ while running:
     pygame.display.update()
 
 pygame.quit()
-print(game_grid)
