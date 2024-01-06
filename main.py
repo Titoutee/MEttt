@@ -7,7 +7,7 @@ RATIO = (1, 1) # Frozen for button squareness
 HEIGHT = 720
 WIDTH = HEIGHT//RATIO[0]*RATIO[1]
 
-BLUE = (0, 0, 255)
+BLUE = (0, 0, 0)
 WHITE = (255, 255, 255)
 
 BUTTON_HEIGHT = HEIGHT//3
@@ -61,14 +61,14 @@ def count_from(r, c, player):
     maximum = count_from_towards(r, c, 1, 0, player) + count_from_towards(r, c, -1, 0, player)-1
     maximum = max(maximum, count_from_towards(r, c, 0, 1, player) + count_from_towards(r, c, 0, -1, player)-1)
     maximum = max(maximum, count_from_towards(r, c, 1, 1, player) + count_from_towards(r, c, -1, -1, player)-1)
-
     return maximum
 
 def best_fit():
     nones = [(r, c) for r, row in enumerate(game_grid) for c, val in enumerate(row) if val == None]
-    return sorted(nones, key=lambda pos: count_from(pos[0], pos[1], PLAYER_1))[-1], sorted(nones, key=lambda pos: count_from(pos[0], pos[1], PLAYER_2))[-1]
+    player_one_best = sorted(nones, key=lambda pos: count_from(pos[0], pos[1], PLAYER_1))[-1]
+    player_two_best = sorted(nones, key=lambda pos: count_from(pos[0], pos[1], PLAYER_2))[-1]
+    return player_one_best if count_from(*player_one_best, PLAYER_1) >= count_from(*player_two_best, PLAYER_2) else player_two_best
     
-            
 def grid(blck_height = BUTTON_HEIGHT, blck_width = BUTTON_WIDTH):
     for y in range(0, HEIGHT, blck_width):
         for x in range(0, WIDTH, blck_height):
@@ -91,37 +91,44 @@ gen = iter(buttons.flatten())
 
 player = PLAYER_1
 player_mapping = {PLAYER_1: cross_img, PLAYER_2: circle_img}
+running = True
+r = c = 0
+vol_quit = False
 
-while True:
-    event = pygame.event.wait()
-    if event.type == MOUSEBUTTONDOWN:
-        mouse_x, mouse_y = pygame.mouse.get_pos()
-        print("Clicked!")
-        r, c = clicked_on_who(mouse_x, mouse_y, buttons)
-        if not buttons[r][c].is_clickable():
-            continue
-        game_grid[r][c] = player
-        buttons[r][c].add_image(player_mapping[player], SCREEN)
-        buttons[r][c].clickable = False
-        if win(r, c, player):
-            print(f"Player {player} wins!")
-            break
-        if grid_full():
-            print(f"Game grid is full!")
-            break
-        player = PLAYER_2 if player == PLAYER_1 else PLAYER_1
-        print(best_fit())
-        ITERS+=1
-
+while running:
     try:
         pygame.draw.rect(SCREEN, BLUE, next(gen), 1)
     except StopIteration:
         gen = iter(buttons.flatten())
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-    
     pygame.display.update()
 
-pygame.quit()
+    # Row and column getting
+    if player == PLAYER_2 and one_player:
+        r, c = best_fit()
+    else:
+        if pygame.event.peek(eventtype=QUIT):
+            vol_quit = True
+            break
+        if not pygame.event.peek(eventtype=MOUSEBUTTONDOWN):
+            continue
+        #Mouse button was clicked  
+        r, c = clicked_on_who(*pygame.mouse.get_pos(), buttons)
+        pygame.event.clear()
+    ITERS+=1
+    if not buttons[r][c].is_clickable():
+        continue
+    game_grid[r][c] = player
+    buttons[r][c].add_image(player_mapping[player], SCREEN)
+    buttons[r][c].clickable = False
+    if win(r, c, player):
+        print(f"Player {player} wins!")
+        break
+    if grid_full():
+        print(f"Game grid is full!")
+        break
+    player = PLAYER_2 if player == PLAYER_1 else PLAYER_1
+
+if not vol_quit:
+    print("Click anywhere to quit!")
+    while not pygame.event.peek(eventtype=MOUSEBUTTONDOWN):
+        pygame.display.update()
