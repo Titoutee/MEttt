@@ -1,6 +1,6 @@
 import numpy as np
+import os
 import pygame
-import argparse
 from GUIext import *
 
 RATIO = (1, 1) # Frozen for button squareness
@@ -74,17 +74,20 @@ def grid(blck_height = BUTTON_HEIGHT, blck_width = BUTTON_WIDTH):
         for x in range(0, WIDTH, blck_height):
             # pygame.draw.rect(screen, BLUE, rect, 1)
             yield Button(pygame.Rect(x, y, blck_width, blck_height))
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--robot', action="store_true")
-one_player = parser.parse_args().robot # Get "robot" argument
+players_n = 0
+while players_n not in [1, 2]:
+    players_n = int(input("Nombre joueurs(1/2): "))
+one_player = players_n == 1
 
 pygame.init()
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
 SCREEN.fill(WHITE)
 
-cross_img = pygame.transform.scale(pygame.image.load("cross.png"), (BUTTON_WIDTH, BUTTON_HEIGHT))
-circle_img = pygame.transform.scale(pygame.image.load("circle.png"), (BUTTON_WIDTH, BUTTON_HEIGHT))
+exe_dir = os.path.dirname(os.path.abspath(__file__))
+os.path.join(exe_dir, "images", "cross.png")
+# images root is used by PyInstaller when bundling images into the executable
+cross_img = pygame.transform.scale(pygame.image.load(os.path.join(exe_dir, "images", "cross.png")), (BUTTON_WIDTH, BUTTON_HEIGHT))
+circle_img = pygame.transform.scale(pygame.image.load(os.path.join(exe_dir, "images", "circle.png")), (BUTTON_WIDTH, BUTTON_HEIGHT))
 
 buttons = np.array(list(grid())).reshape((3, 3))
 gen = iter(buttons.flatten())
@@ -111,7 +114,7 @@ while running:
             break
         if not pygame.event.peek(eventtype=MOUSEBUTTONDOWN):
             continue
-        #Mouse button was clicked  
+        #Mouse button was clicked
         r, c = clicked_on_who(*pygame.mouse.get_pos(), buttons)
         pygame.event.clear()
     ITERS+=1
@@ -132,3 +135,4 @@ if not vol_quit:
     print("Click anywhere to quit!")
     while not pygame.event.peek(eventtype=MOUSEBUTTONDOWN):
         pygame.display.update()
+pygame.quit()
