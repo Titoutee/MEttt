@@ -20,3 +20,4 @@ def clicked_on_who(m_x, m_y, buttons):
             assert isinstance(button.rect, Rect)
             if button.rect.collidepoint(m_x, m_y):
                 return r, c
+

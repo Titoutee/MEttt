@@ -1,7 +1,11 @@
 import numpy as np
-import os
+from time import sleep
 import pygame
+import os
+import pygame_menu
 from GUIext import *
+
+TIME = 1.0
 
 RATIO = (1, 1) # Frozen for button squareness
 HEIGHT = 720
@@ -21,6 +25,14 @@ ITERS = 0
 game_grid = [[None]*3 for _ in range(3)]
 winners = {PLAYER_1: [], PLAYER_2: []}
 
+one_player = False
+
+def start():
+    global one_player
+    one_player = selector.get_value()[0][1]
+    print(one_player)
+    menu.disable()
+    
 def grid_full():
     return ITERS >= 9
 
@@ -74,13 +86,16 @@ def grid(blck_height = BUTTON_HEIGHT, blck_width = BUTTON_WIDTH):
         for x in range(0, WIDTH, blck_height):
             # pygame.draw.rect(screen, BLUE, rect, 1)
             yield Button(pygame.Rect(x, y, blck_width, blck_height))
-players_n = 0
-while players_n not in [1, 2]:
-    players_n = int(input("Nombre joueurs(1/2): "))
-one_player = players_n == 1
 
 pygame.init()
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
+
+menu = pygame_menu.Menu(title="Bienvenue", width=WIDTH, height=HEIGHT, theme=pygame_menu.themes.THEME_DARK)
+selector = menu.add.selector(title="Nombre joueurs: ", items=[("1", True), ("2", False)])
+menu.add.button('Start', start)
+menu.add.button('Quit', pygame_menu.events.EXIT)
+menu.mainloop(SCREEN)
+
 SCREEN.fill(WHITE)
 
 exe_dir = os.path.dirname(os.path.abspath(__file__))
@@ -108,6 +123,7 @@ while running:
     # Row and column getting
     if player == PLAYER_2 and one_player:
         r, c = best_fit()
+        sleep(TIME)
     else:
         if pygame.event.peek(eventtype=QUIT):
             vol_quit = True
@@ -123,12 +139,14 @@ while running:
     game_grid[r][c] = player
     buttons[r][c].add_image(player_mapping[player], SCREEN)
     buttons[r][c].clickable = False
+    
     if win(r, c, player):
         print(f"Player {player} wins!")
         break
     if grid_full():
         print(f"Game grid is full!")
         break
+    
     player = PLAYER_2 if player == PLAYER_1 else PLAYER_1
 
 if not vol_quit:
