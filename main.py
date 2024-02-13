@@ -4,6 +4,7 @@ import pygame
 import os
 import pygame_menu
 from GUIext import *
+from rand import randint
 
 TIME = 1.0
 
@@ -23,13 +24,14 @@ PLAYER_2 = 2
 ITERS = 0
 
 game_grid = [[None]*3 for _ in range(3)]
-winners = {PLAYER_1: [], PLAYER_2: []}
 
 one_player = False
+difficult = False
 
 def start():
-    global one_player
-    one_player = selector.get_value()[0][1]
+    global one_player, difficult
+    one_player = player_selector.get_value()[0][1]
+    difficult = difficult_selector.get_value()[0][1]
     print(one_player)
     menu.disable()
     
@@ -56,31 +58,42 @@ def win(r, c, player):
         return True
     return False
 
-def count_from_towards(r, c, dh, dv, player):
+### Counts clones from (r,c) towards a given direction (dv, dh)
+def count_from_towards(r, c, dr, dc, player):
     n = 1
-    r+=dv
-    c+=dh  
-    while 0<=r<=2 and 0<=c<=2:
-        if game_grid[r][c] == player:
-            n+=1
-        else:
-            break
-        r+=dv
-        c+=dh  
+    r+=dr
+    c+=dc  
+    while 0<=r<=2 and 0<=c<=2 and game_grid[r][c] == player:
+        n+=1
+        r+=dr
+        c+=dc 
     return n
 
+### Counts maximum from (r, c), covering all directions
 def count_from(r, c, player):
     maximum = count_from_towards(r, c, 1, 0, player) + count_from_towards(r, c, -1, 0, player)-1
     maximum = max(maximum, count_from_towards(r, c, 0, 1, player) + count_from_towards(r, c, 0, -1, player)-1)
     maximum = max(maximum, count_from_towards(r, c, 1, 1, player) + count_from_towards(r, c, -1, -1, player)-1)
+    maximum = max(maximum, count_from_towards(r, c, -1, 1, player) + count_from_towards(r, c, 1, -1, player)-1)
     return maximum
 
-def best_fit():
+WIN = 4 # Superior score
+
+def best_fit(r, c):
+    max_count_from_1 = count_from(r, c, PLAYER_1)
+    max_count_from_2 = count_from(r, c, PLAYER_2)
+    if max_count_from_2 >= 3:
+        return WIN
+    return max(max_count_from_1, max_count_from_2)
+
+def move():
     nones = [(r, c) for r, row in enumerate(game_grid) for c, val in enumerate(row) if val == None]
-    player_one_best = sorted(nones, key=lambda pos: count_from(pos[0], pos[1], PLAYER_1))[-1]
-    player_two_best = sorted(nones, key=lambda pos: count_from(pos[0], pos[1], PLAYER_2))[-1]
-    return player_one_best if count_from(*player_one_best, PLAYER_1) >= count_from(*player_two_best, PLAYER_2) else player_two_best
-    
+
+    l = sorted(nones, key=lambda pos: best_fit(*pos))
+    print(l)
+    return l[-1]
+
+
 def grid(blck_height = BUTTON_HEIGHT, blck_width = BUTTON_WIDTH):
     for y in range(0, HEIGHT, blck_width):
         for x in range(0, WIDTH, blck_height):
@@ -91,7 +104,8 @@ pygame.init()
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
 
 menu = pygame_menu.Menu(title="Bienvenue", width=WIDTH, height=HEIGHT, theme=pygame_menu.themes.THEME_DARK)
-selector = menu.add.selector(title="Nombre joueurs: ", items=[("1", True), ("2", False)])
+player_selector = menu.add.selector(title="Nombre joueurs: ", items=[("1", True), ("2", False)])
+difficult_selector = menu.add.selector(title="Difficulté: ", items=[("Facile", False), ("Difficile", True)])
 menu.add.button('Start', start)
 menu.add.button('Quit', pygame_menu.events.EXIT)
 menu.mainloop(SCREEN)
@@ -99,13 +113,11 @@ menu.mainloop(SCREEN)
 SCREEN.fill(WHITE)
 
 exe_dir = os.path.dirname(os.path.abspath(__file__))
-os.path.join(exe_dir, "images", "cross.png")
-# images root is used by PyInstaller when bundling images into the executable
 cross_img = pygame.transform.scale(pygame.image.load(os.path.join(exe_dir, "images", "cross.png")), (BUTTON_WIDTH, BUTTON_HEIGHT))
 circle_img = pygame.transform.scale(pygame.image.load(os.path.join(exe_dir, "images", "circle.png")), (BUTTON_WIDTH, BUTTON_HEIGHT))
 
 buttons = np.array(list(grid())).reshape((3, 3))
-gen = iter(buttons.flatten())
+gen = iter(buttons.flatten()) # will be constantly emptied and refilled for grid displaying
 
 player = PLAYER_1
 player_mapping = {PLAYER_1: cross_img, PLAYER_2: circle_img}
@@ -122,7 +134,7 @@ while running:
 
     # Row and column getting
     if player == PLAYER_2 and one_player:
-        r, c = best_fit()
+        r, c = move() if difficult else 
         sleep(TIME)
     else:
         if pygame.event.peek(eventtype=QUIT):
