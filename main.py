@@ -4,7 +4,7 @@ import pygame
 import os
 import pygame_menu
 from GUIext import *
-from rand import randint
+from random import randint
 
 TIME = 1.0
 
@@ -21,10 +21,6 @@ BUTTON_WIDTH = WIDTH//3
 PLAYER_1 = 1
 PLAYER_2 = 2
 
-ITERS = 0
-
-game_grid = [[None]*3 for _ in range(3)]
-
 one_player = False
 difficult = False
 
@@ -32,11 +28,13 @@ def start():
     global one_player, difficult
     one_player = player_selector.get_value()[0][1]
     difficult = difficult_selector.get_value()[0][1]
-    print(one_player)
     menu.disable()
-    
+
 def grid_full():
     return ITERS >= 9
+
+def nones_f():
+    return [(r, c) for r, row in enumerate(game_grid) for c, val in enumerate(row) if val == None]
 
 def win(r, c, player):
     if game_grid[r].count(player) == 3:
@@ -51,10 +49,8 @@ def win(r, c, player):
         return True
         
     if game_grid[0][0] != None and game_grid[0][0] == game_grid[1][1] == game_grid[2][2]:
-        print("Diag wins!")
         return True
     if game_grid[0][2] != None and game_grid[0][2] == game_grid[1][1] == game_grid[2][0]:
-        print("Diag wins!")
         return True
     return False
 
@@ -77,7 +73,7 @@ def count_from(r, c, player):
     maximum = max(maximum, count_from_towards(r, c, -1, 1, player) + count_from_towards(r, c, 1, -1, player)-1)
     return maximum
 
-WIN = 4 # Superior score
+WIN = 4 #Superior score
 
 def best_fit(r, c):
     max_count_from_1 = count_from(r, c, PLAYER_1)
@@ -87,12 +83,9 @@ def best_fit(r, c):
     return max(max_count_from_1, max_count_from_2)
 
 def move():
-    nones = [(r, c) for r, row in enumerate(game_grid) for c, val in enumerate(row) if val == None]
-
-    l = sorted(nones, key=lambda pos: best_fit(*pos))
+    l = sorted(nones_f(), key=lambda pos: best_fit(*pos))
     print(l)
     return l[-1]
-
 
 def grid(blck_height = BUTTON_HEIGHT, blck_width = BUTTON_WIDTH):
     for y in range(0, HEIGHT, blck_width):
@@ -103,66 +96,69 @@ def grid(blck_height = BUTTON_HEIGHT, blck_width = BUTTON_WIDTH):
 pygame.init()
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
 
-menu = pygame_menu.Menu(title="Bienvenue", width=WIDTH, height=HEIGHT, theme=pygame_menu.themes.THEME_DARK)
+menu = pygame_menu.Menu(title="Morpion", width=WIDTH, height=HEIGHT, theme=pygame_menu.themes.THEME_DARK)
 player_selector = menu.add.selector(title="Nombre joueurs: ", items=[("1", True), ("2", False)])
 difficult_selector = menu.add.selector(title="Difficulté: ", items=[("Facile", False), ("Difficile", True)])
 menu.add.button('Start', start)
 menu.add.button('Quit', pygame_menu.events.EXIT)
 menu.mainloop(SCREEN)
 
-SCREEN.fill(WHITE)
-
 exe_dir = os.path.dirname(os.path.abspath(__file__))
 cross_img = pygame.transform.scale(pygame.image.load(os.path.join(exe_dir, "images", "cross.png")), (BUTTON_WIDTH, BUTTON_HEIGHT))
 circle_img = pygame.transform.scale(pygame.image.load(os.path.join(exe_dir, "images", "circle.png")), (BUTTON_WIDTH, BUTTON_HEIGHT))
 
-buttons = np.array(list(grid())).reshape((3, 3))
-gen = iter(buttons.flatten()) # will be constantly emptied and refilled for grid displaying
 
-player = PLAYER_1
-player_mapping = {PLAYER_1: cross_img, PLAYER_2: circle_img}
-running = True
-r = c = 0
-vol_quit = False
+while 1:
+    # Reinit game at each iteration
+    game_grid = [[None]*3 for _ in range(3)]
+    ITERS = 0
+    player = PLAYER_1
+    player_mapping = {PLAYER_1: cross_img, PLAYER_2: circle_img}
+    running = True
+    r = c = 0
+    vol_quit = False
+    buttons = np.array(list(grid())).reshape((3, 3))
+    gen = iter(buttons.flatten()) # will be constantly emptied and refilled for grid displaying
 
-while running:
-    try:
-        pygame.draw.rect(SCREEN, BLUE, next(gen), 1)
-    except StopIteration:
-        gen = iter(buttons.flatten())
-    pygame.display.update()
-
-    # Row and column getting
-    if player == PLAYER_2 and one_player:
-        r, c = move() if difficult else 
-        sleep(TIME)
-    else:
-        if pygame.event.peek(eventtype=QUIT):
-            vol_quit = True
-            break
-        if not pygame.event.peek(eventtype=MOUSEBUTTONDOWN):
-            continue
-        #Mouse button was clicked
-        r, c = clicked_on_who(*pygame.mouse.get_pos(), buttons)
-        pygame.event.clear()
-    ITERS+=1
-    if not buttons[r][c].is_clickable():
-        continue
-    game_grid[r][c] = player
-    buttons[r][c].add_image(player_mapping[player], SCREEN)
-    buttons[r][c].clickable = False
-    
-    if win(r, c, player):
-        print(f"Player {player} wins!")
-        break
-    if grid_full():
-        print(f"Game grid is full!")
-        break
-    
-    player = PLAYER_2 if player == PLAYER_1 else PLAYER_1
-
-if not vol_quit:
-    print("Click anywhere to quit!")
-    while not pygame.event.peek(eventtype=MOUSEBUTTONDOWN):
+    SCREEN.fill(WHITE) # Dump the menu UI
+    while running:
+        try:
+            pygame.draw.rect(SCREEN, BLUE, next(gen), 1)
+        except StopIteration:
+            gen = iter(buttons.flatten())
         pygame.display.update()
-pygame.quit()
+    
+        if player == PLAYER_2 and one_player:
+            nones = nones_f()
+            r, c = move() if difficult else nones[randint(0, len(nones)-1)]
+            sleep(TIME)
+        else:
+            if pygame.event.peek(eventtype=QUIT):
+                vol_quit = True
+                break
+            if not pygame.event.peek(eventtype=MOUSEBUTTONDOWN):
+                continue
+            #Mouse button was clicked
+            r, c = clicked_on_who(*pygame.mouse.get_pos(), buttons)
+            pygame.event.clear()
+        ITERS+=1
+        if not buttons[r][c].is_clickable():
+            continue
+        game_grid[r][c] = player
+        buttons[r][c].add_image(player_mapping[player], SCREEN)
+        buttons[r][c].clickable = False
+        
+        if win(r, c, player):
+            print(f"Le joueur {player} gagne!")
+            break
+        if grid_full():
+            print(f"La grille est pleine! Match nul.")
+            break
+        
+        player = PLAYER_2 if player == PLAYER_1 else PLAYER_1
+    
+    if not vol_quit:
+        while not pygame.event.peek(eventtype=MOUSEBUTTONDOWN):
+            pygame.display.update()
+    menu.enable()
+    menu.mainloop(SCREEN)   
