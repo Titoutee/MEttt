@@ -96,6 +96,7 @@ def grid(blck_height = BUTTON_HEIGHT, blck_width = BUTTON_WIDTH):
 pygame.init()
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
 
+basic_font = pygame.font.Font(None, 64)
 menu = pygame_menu.Menu(title="Morpion", width=WIDTH, height=HEIGHT, theme=pygame_menu.themes.THEME_DARK)
 player_selector = menu.add.selector(title="Nombre joueurs: ", items=[("1", True), ("2", False)])
 difficult_selector = menu.add.selector(title="Difficulté: ", items=[("Facile", False), ("Difficile", True)])
@@ -150,9 +151,46 @@ while 1:
         
         if win(r, c, player):
             print(f"Le joueur {player} gagne!")
+            wtext = "L'ordinateur a gagné !" if one_player and player == PLAYER_2 else "Le joueur 1 a gagné !"
+            win_text = basic_font.render(wtext, True, (0, 0, 0), (255, 255, 255))
+            win_text_surf = win_text.get_rect()
+            win_text_surf.center = (WIDTH // 2, HEIGHT // 4)
+            bg_rect = pygame.Rect(0,0,win_text_surf[2]+3, win_text_surf[3]+3)
+            bg_rect.center = (WIDTH//2, HEIGHT//4)
+            background = pygame.draw.rect(SCREEN, (0, 0, 0), bg_rect, width = 5)
+            SCREEN.blit(win_text, win_text_surf)
+            
+            retry = basic_font.render("Rejouer", True, (0, 0, 0), (255, 255, 255))
+            retry_surf = retry.get_rect()
+            retry_surf.center = (WIDTH // 2, HEIGHT // 2)
+            bg_rect = pygame.Rect(0,0,retry_surf[2]+3, retry_surf[3]+3)
+            bg_rect.center = (WIDTH//2, HEIGHT//2)
+            background = pygame.draw.rect(SCREEN, (0, 0, 0), bg_rect, width = 5)
+            SCREEN.blit(retry, retry_surf)
+            for events in pygame.event.get():
+                if events.type == pygame.MOUSEBUTTONDOWN and bg_rect.collidepoint(events.pos):
+                    start()
+            
+
+
+            back = basic_font.render("Retour", True, (0, 0, 0), (255, 255, 255))
+            back_surf = back.get_rect()
+            back_surf.center = (WIDTH // 2, 3*HEIGHT // 4)
+            bg_rect = pygame.Rect(0,0,back_surf[2]+3, back_surf[3]+3)
+            bg_rect.center = (WIDTH//2, 3*HEIGHT//4)
+            background = pygame.draw.rect(SCREEN, (0, 0, 0), bg_rect, width = 5)
+            SCREEN.blit(back, back_surf)
             break
+
         if grid_full():
             print(f"La grille est pleine! Match nul.")
+            draw_text = basic_font.render("La grille est pleine ! Match nul", True, (0, 0, 0), (255, 255, 255))
+            draw_text_surf = draw_text.get_rect()
+            draw_text_surf.center = (WIDTH // 2, HEIGHT // 4)
+            bg_rect = pygame.Rect(0,0,draw_text_surf[2]+3, draw_text_surf[3]+3)
+            bg_rect.center = (WIDTH//2, HEIGHT//4)
+            background = pygame.draw.rect(SCREEN, (0, 0, 0), bg_rect, width = 5)
+            SCREEN.blit(draw_text, draw_text_surf)
             break
         
         player = PLAYER_2 if player == PLAYER_1 else PLAYER_1
@@ -161,4 +199,4 @@ while 1:
         while not pygame.event.peek(eventtype=MOUSEBUTTONDOWN):
             pygame.display.update()
     menu.enable()
-    menu.mainloop(SCREEN)   
+    menu.mainloop(SCREEN)
