@@ -53,6 +53,16 @@ def win(r, c, player):
         return True
     return False
 
+def draw_box(r, g, b, text, height_divide):
+    text = basic_font.render(text, True, (0, 0, 0), (r, g, b))
+    text_surf = text.get_rect()
+    text_surf.center = (WIDTH // 2, HEIGHT // height_divide)
+    bg_rect = pygame.Rect(0,0,text_surf[2]+3, text_surf[3]+3)
+    bg_rect.center = (WIDTH//2, HEIGHT//height_divide)
+    background = pygame.draw.rect(SCREEN, (0, 0, 0), bg_rect, width = 5)
+    SCREEN.blit(text, text_surf)
+
+
 ### Counts clones from (r,c) towards a given direction (dv, dh)
 def count_from_towards(r, c, dr, dc, player):
     n = 1
@@ -152,33 +162,12 @@ while 1:
         ITERS+=1
 
         if win(r, c, player):
-            wtext = "L'ordinateur a gagné !" if one_player and player == PLAYER_2 else f"Le joueur {player} a gagné !"
-            win_text = basic_font.render(wtext, True, (0, 0, 0), (58, 85, 218))
-            win_text_surf = win_text.get_rect()
-            win_text_surf.center = (WIDTH // 2, HEIGHT // 4)
-            bg_rect = pygame.Rect(0,0,win_text_surf[2]+3, win_text_surf[3]+3)
-            bg_rect.center = (WIDTH//2, HEIGHT//4)
-            background = pygame.draw.rect(SCREEN, (0, 0, 0), bg_rect, width = 5)
-            SCREEN.blit(win_text, win_text_surf)
-
-            wtext = "Cliquez pour continuer..."
-            win_text = basic_font.render(wtext, True, (0, 0, 0), (58, 85, 218))
-            win_text_surf = win_text.get_rect()
-            win_text_surf.center = (WIDTH // 2, HEIGHT // 2)
-            bg_rect = pygame.Rect(0,0,win_text_surf[2]+3, win_text_surf[3]+3)
-            bg_rect.center = (WIDTH//2, HEIGHT//2)
-            background = pygame.draw.rect(SCREEN, (0, 0, 0), bg_rect, width = 5)
-            SCREEN.blit(win_text, win_text_surf)
+            draw_box(58, 85, 218, "L'ordinateur a gagné !" if one_player and player == PLAYER_2 else f"Le joueur {player} a gagné !", 4)
+            draw_box(58, 85, 218, "Cliquez pour continuer...", 2)
             break
 
         if grid_full():
-            draw_text = basic_font.render("La grille est pleine ! Match nul", True, (0, 0, 0), (58, 85, 218))
-            draw_text_surf = draw_text.get_rect()
-            draw_text_surf.center = (WIDTH // 2, HEIGHT // 2)
-            bg_rect = pygame.Rect(0,0,draw_text_surf[2]+3, draw_text_surf[3]+3)
-            bg_rect.center = (WIDTH//2, HEIGHT//2)
-            background = pygame.draw.rect(SCREEN, (0, 0, 0), bg_rect, width = 5)
-            SCREEN.blit(draw_text, draw_text_surf)
+            draw_box(58, 85, 218, "La grille est pleine ! Match nul", 2)
             break
         
         player = PLAYER_2 if player == PLAYER_1 else PLAYER_1
